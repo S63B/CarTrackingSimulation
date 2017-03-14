@@ -44,6 +44,13 @@
 			<artifactId>spring-restdocs-mockmvc</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.traas</groupId>
+			<artifactId>com.traas</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/src/main/resources/TraaS_sources.jar</systemPath>
+		</dependency>
 	</dependencies>
 
 	<build>
