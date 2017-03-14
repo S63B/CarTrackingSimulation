@@ -51,7 +51,7 @@
 			<scope>system</scope>
 			<systemPath>${project.basedir}/src/main/resources/TraaS_sources.jar</systemPath>
 		</dependency>
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>

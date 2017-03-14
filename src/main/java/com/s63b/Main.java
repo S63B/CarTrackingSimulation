@@ -1,5 +1,15 @@
 package com.s63b;
 
+
+
+import java.io.File;
+import java.util.Random;
+import java.util.Scanner;
+
+
+import de.tudresden.sumo.cmd.Edge;
+import de.tudresden.sumo.config.Constants;
+import de.tudresden.ws.Traci;
 import de.tudresden.ws.container.*;
 import de.tudresden.sumo.util.*;
 import de.tudresden.sumo.cmd.Simulation;
@@ -11,9 +21,7 @@ import de.tudresden.ws.container.SumoPosition2D;
 import it.polito.appeal.traci.SumoTraciConnection;
 import it.polito.appeal.traci.TraCIException;
 
-import java.io.File;
-import java.util.Random;
-import java.util.Scanner;
+import static org.apache.coyote.http11.Constants.a;
 
 public class Main {
     static String sumo_bin = "C:/Program Files (x86)/DLR/Sumo/bin/sumo-gui.exe";
@@ -24,13 +32,14 @@ public class Main {
     static boolean simIsRunning;
     static int simTime;
     static int carsCreated = 0;
+    static SumoTraciConnection conn;
     /* todo info over vehicle constructor
     Vehicle.add(Vehicle ID, typeID, routeID, departTime, pos, speed, byte (Depart)lane);
     */
 
     public static void main(String[] args) {
         //start Simulation
-        SumoTraciConnection conn = new SumoTraciConnection(sumo_bin, config_file);
+        conn = new SumoTraciConnection(sumo_bin, config_file);
         //set some options
         conn.addOption("step-length", "0.1"); //timestep 100
 
@@ -47,10 +56,17 @@ public class Main {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        spawnCars(conn, 100);
+
+        keepConsoleAlive();
+    }
+
+    private static void keepConsoleAlive(){
         Scanner scanner = new Scanner(System.in);
         System.out.println("How many cars do you want to spawn?");
         int createCars = scanner.nextInt();
         spawnCars(conn, createCars);
+        keepConsoleAlive();
     }
 
     public static void simTimeTickLoop(SumoTraciConnection conn) {
