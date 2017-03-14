@@ -17,6 +17,7 @@ import java.util.Scanner;
 
 public class Main {
     static String sumo_bin = "C:/Program Files (x86)/DLR/Sumo/bin/sumo-gui.exe";
+    // todo You have to download the sumo files from the Drive and put the in the root folder of this project
     static File file = new File("sumofiles/config.sumo.cfg");
     static final String config_file = file.getAbsolutePath();
     static Thread simTimeTickThread;
