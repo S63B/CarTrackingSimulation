@@ -17,6 +17,8 @@ public class Main {
     private static final String config_file = file.getAbsolutePath();
     private static int carCount = 1;
     private static boolean pulseNextTick = false;
+    private static boolean addCarsNextTick = false;
+    private static int vehiclesToAdd;
 
     static Thread simTimeTickThread;
 
@@ -38,12 +40,12 @@ public class Main {
             System.out.println("Simulation running");
 
             // Add first 10 vehicles
-            addVehicles(10);
+            addVehiclesToQueue(10);
 
             // Start pulsing to tracking server every 30seconds
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
             Runnable pulse = () -> {pulseNextTick = true;};
-            executor.scheduleAtFixedRate(pulse,5, 5, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(pulse,5, 30, TimeUnit.SECONDS);
 
             // Enables the user to keep adding cars
             keepConsoleAlive();
@@ -52,6 +54,9 @@ public class Main {
         }
     }
 
+    /**
+     * Pulses the server with Car/Lat/Lon info
+     */
     private static void pulseServer() {
         try {
             for (Vehicle v : vehicleRepo.getAll().values()) {
@@ -67,17 +72,26 @@ public class Main {
         }
     }
 
-    private static void addVehicles(int amount) {
-        try {
-            //Temporary stopping the simulation
-            simTimeTickThread.stop();
+    /**
+     * Adds the set amount of vehicles to the queue to be added in the simulation next tick
+     * @param amount
+     */
+    private static void addVehiclesToQueue(int amount) {
+        vehiclesToAdd = amount;
+        addCarsNextTick = true;
+    }
 
+    /**
+     * Generates random vehicles and adds them to the simulation.
+     */
+    private static void addVehiclesToSimulation(){
+        try {
             VehicleType type = vehicleTypeRepo.getByID("car");
 
             Random randomRoute = new Random();
             String routeId;
 
-            for(int i = 0; i< amount; i++){
+            for(int i = 0; i< vehiclesToAdd; i++){
                 routeId = String.valueOf(randomRoute.nextInt(5840));
                 Route route = routeRepo.getByID(String.valueOf(routeId));
 
@@ -91,8 +105,7 @@ public class Main {
             vehicleRepo = connection.getVehicleRepository();
 
             //Starting the stimulation again.
-            startSimLoop();
-            System.out.println("Total amount of cars spawned:"+ amount);
+            System.out.println("Total amount of cars spawned:"+ vehiclesToAdd);
 
 
             // connection.getSimulationData().queryPositionConversion().setPositionToConvert(meh.getPosition(),true);
@@ -100,30 +113,43 @@ public class Main {
             e.printStackTrace();
         }
     }
-
+    /**
+     * Keeps the console alive so the user can keep adding cars.
+     */
     private static void keepConsoleAlive() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("How many cars do you want to spawn?");
 
         int createCars = scanner.nextInt();
-        addVehicles(createCars);
+        addVehiclesToQueue(createCars);
 
         keepConsoleAlive();
     }
 
+    /**
+     * Restarts the simTimeTickThread after it was stoppped.
+     */
     private static void startSimLoop(){
         Runnable simTimeTick = () -> simTimeTickLoop();
         simTimeTickThread = new Thread(simTimeTick);
         simTimeTickThread.start();
     }
 
+    /**
+     * Controls the Time Ticks from the simulation.
+     * Any requests or queries to the simulations should be done AFTER the nextSimStep.
+     */
     private static void simTimeTickLoop() {
         while (true) {
             try {
                 connection.nextSimStep();
                 if(pulseNextTick){
-                    pulseServer();
                     pulseNextTick = false;
+                    pulseServer();
+                }
+                if(addCarsNextTick){
+                    addCarsNextTick = false;
+                    addVehiclesToSimulation();
                 }
             } catch (Exception exception) {
                 System.out.println("Error:" + exception.toString());
