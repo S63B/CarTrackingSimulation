@@ -1,33 +1,18 @@
 package com.s63b;
 
+import de.tudresden.sumo.cmd.Simulation;
+import de.tudresden.sumo.cmd.Vehicle;
+import it.polito.appeal.traci.SumoTraciConnection;
 
-
-import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
-
-import de.tudresden.sumo.cmd.Edge;
-import de.tudresden.sumo.config.Constants;
-import de.tudresden.ws.Traci;
-import de.tudresden.ws.container.*;
-import de.tudresden.sumo.util.*;
-import de.tudresden.sumo.cmd.Simulation;
-import de.tudresden.sumo.cmd.Vehicle;
-import de.tudresden.sumo.util.Sumo;
-import de.tudresden.sumo.util.SumoCommand;
-import de.tudresden.ws.container.SumoGeometry;
-import de.tudresden.ws.container.SumoPosition2D;
-import it.polito.appeal.traci.SumoTraciConnection;
-import it.polito.appeal.traci.TraCIException;
-
-import static org.apache.coyote.http11.Constants.a;
-
 public class Main {
-    static String sumo_bin = "C:/Program Files (x86)/DLR/Sumo/bin/sumo-gui.exe";
+    static String sumo_bin;
     // todo You have to download the sumo files from the Drive and put the in the root folder of this project
-    static File file = new File("sumofiles/config.sumo.cfg");
-    static final String config_file = file.getAbsolutePath();
+    static String config_file;
     static Thread simTimeTickThread;
     static boolean simIsRunning;
     static int simTime;
@@ -38,6 +23,35 @@ public class Main {
     */
 
     public static void main(String[] args) {
+        Map<String, String> arguments = new HashMap<>();
+        for (int i = 0; i < args.length; i++){
+            if (args[i].contains("=")){
+                String[] values = args[i].split("=");
+                String key = values[0];
+                String value = values[1];
+                arguments.put(key, value);
+            }else{
+                System.out.println("Warning: Invalid argument '" + args[i] + "'");
+            }
+        }
+
+        if (arguments.containsKey("sumo_bin")){
+            sumo_bin = arguments.get("sumo_bin");
+        }else{
+            System.out.println("Missing required argument 'sumo_bin'");
+            return;
+        }
+
+        if (arguments.containsKey("sumo_config")){
+            config_file = arguments.get("sumo_config");
+        }else{
+            System.out.println("Missing required argument 'sumo_config'");
+            return;
+        }
+
+
+
+
         //start Simulation
         conn = new SumoTraciConnection(sumo_bin, config_file);
         //set some options
@@ -97,5 +111,11 @@ public class Main {
             System.out.println(e.toString());
         }
         System.out.println("Done creating all cars. Amount created:"+amountOfCars);
+    }
+
+    public static String getResourceFolder(){
+        String fileName = "application.properties";
+        String resourcePath = Main.class.getClassLoader().getResource(fileName).getPath();
+        return resourcePath.substring(1, resourcePath.length() - fileName.length());
     }
 }

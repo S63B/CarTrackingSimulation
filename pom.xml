@@ -49,7 +49,21 @@
 			<artifactId>com.traas</artifactId>
 			<version>1.0</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/TraaS_sources.jar</systemPath>
+			<systemPath>${project.basedir}/Libraries/TraaS.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.traas</groupId>
+			<artifactId>com.traas.sources</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Libraries/TraaS_sources.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.traas</groupId>
+			<artifactId>com.traas.javadoc</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Libraries/TraaS_javadoc.jar</systemPath>
 		</dependency>
     </dependencies>
 
