@@ -29,12 +29,14 @@ public class Main {
     public static void main(String[] args) {
 
         try {
+            // Connection settings
             connection = new SumoTraciConnection(config_file,0);
             connection.runServer(true);
 
+            // Gets repositories from the connection
             routeRepo = connection.getRouteRepository();
             vehicleTypeRepo = connection.getVehicleTypeRepository();
-         //   Map<String, Vehicle> vehicles = vehicleRepo.getAll();
+
             // Start simulation
             startSimLoop();
             System.out.println("Simulation running");
