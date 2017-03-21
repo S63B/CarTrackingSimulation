@@ -127,7 +127,7 @@ public class Main {
     }
 
     /**
-     * Restarts the simTimeTickThread after it was stoppped.
+     * Stars the simTimeTickThread.
      */
     private static void startSimLoop(){
         Runnable simTimeTick = () -> simTimeTickLoop();
