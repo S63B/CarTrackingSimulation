@@ -4,15 +4,19 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Uber on 21-3-2017.
  */
 public class Main {
-    static SumoTraciConnection connection;
-    static File file = new File("sumofiles/config.sumo.cfg");
-    static final String config_file = file.getAbsolutePath();
-    static int carCount = 1;
+    private static SumoTraciConnection connection;
+    private static File file = new File("sumofiles/config.sumo.cfg");
+    private static final String config_file = file.getAbsolutePath();
+    private static int carCount = 1;
+    private static boolean pulseNextTick = false;
 
     static Thread simTimeTickThread;
 
@@ -20,7 +24,6 @@ public class Main {
     static Repository<Route> routeRepo;
     static Repository<VehicleType> vehicleTypeRepo;
     static Repository<Vehicle> vehicleRepo;
-
     public static void main(String[] args) {
 
         try {
@@ -29,15 +32,38 @@ public class Main {
 
             routeRepo = connection.getRouteRepository();
             vehicleTypeRepo = connection.getVehicleTypeRepository();
-
+         //   Map<String, Vehicle> vehicles = vehicleRepo.getAll();
+            // Start simulation
             startSimLoop();
             System.out.println("Simulation running");
 
+            // Add first 10 vehicles
             addVehicles(10);
 
+            // Start pulsing to tracking server every 30seconds
+            ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+            Runnable pulse = () -> {pulseNextTick = true;};
+            executor.scheduleAtFixedRate(pulse,5, 5, TimeUnit.SECONDS);
+
+            // Enables the user to keep adding cars
             keepConsoleAlive();
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private static void pulseServer() {
+        try {
+            for (Vehicle v : vehicleRepo.getAll().values()) {
+                PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
+                positionConversionQuery.setPositionToConvert(v.getPosition(), true);
+                Point2D a = positionConversionQuery.get();
+                System.out.println( v.getID() +"Lat/Lon: "+  a.getY()+" " + a.getX());
+            }
+            System.out.println("Amount of cars pulsed:"+vehicleRepo.getAll().values().size());
+        }
+        catch (IOException e){
+            System.out.println(e);
         }
     }
 
@@ -85,28 +111,20 @@ public class Main {
         keepConsoleAlive();
     }
 
-    public static void startSimLoop(){
-        Runnable simTimeTick = new Runnable() {
-            public void run() {
-                simTimeTickLoop();
-            }
-        };
+    private static void startSimLoop(){
+        Runnable simTimeTick = () -> simTimeTickLoop();
         simTimeTickThread = new Thread(simTimeTick);
         simTimeTickThread.start();
     }
 
-    public static void simTimeTickLoop() {
+    private static void simTimeTickLoop() {
         while (true) {
             try {
                 connection.nextSimStep();
-
-                Vehicle car1 = vehicleRepo.getByID("car1");
-                PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
-                positionConversionQuery.setPositionToConvert(car1.getPosition(),true);
-                Point2D a = positionConversionQuery.get();
-
-                System.out.println( "Lat: " + a.getY()+ " Lon: "+a.getX());
-
+                if(pulseNextTick){
+                    pulseServer();
+                    pulseNextTick = false;
+                }
             } catch (Exception exception) {
                 System.out.println("Error:" + exception.toString());
                 break;
