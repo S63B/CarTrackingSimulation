@@ -15,59 +15,51 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class SimulationController {
-    private static SumoTraciConnection connection;
-    private static File file = new File("sumofiles/config.sumo.cfg");
-    private static final String config_file = file.getAbsolutePath();
-    private static int carCount = 1;
-    private static boolean pulseNextTick = false;
-    private static boolean addCarsNextTick = false;
-    private static int vehiclesToAdd;
-    private static boolean initiated = false;
-
-    static Thread simTimeTickThread;
+    private SumoTraciConnection connection;
+    private File file = new File("sumofiles/config.sumo.cfg");
+    private final String config_file = file.getAbsolutePath();
+    private int carCount = 1;
+    private boolean pulseNextTick = false;
+    private boolean addCarsNextTick = false;
+    private int vehiclesToAdd;
 
     //Repos
-    static Repository<Route> routeRepo;
-    static Repository<VehicleType> vehicleTypeRepo;
-    static Repository<Vehicle> vehicleRepo;
+    private Repository<Route> routeRepo;
+    private Repository<VehicleType> vehicleTypeRepo;
+    private Repository<Vehicle> vehicleRepo;
 
-    public static void init(){
-        if(!initiated) {
-            try {
-                // Connection settings
-                connection = new SumoTraciConnection(config_file, 0);
-                connection.runServer(true);
+    public SimulationController() throws IOException {
+        try {
+            // Connection settings
+            connection = new SumoTraciConnection(config_file, 0);
+            connection.runServer(true);
 
-                // Gets repositories from the connection
-                routeRepo = connection.getRouteRepository();
-                vehicleTypeRepo = connection.getVehicleTypeRepository();
+            // Gets repositories from the connection
+            routeRepo = connection.getRouteRepository();
+            vehicleTypeRepo = connection.getVehicleTypeRepository();
 
-                // Start simulation
-                startSimLoop();
-                System.out.println("Simulation running");
+            // Start simulation
+            startSimLoop();
+            System.out.println("Simulation running");
 
-                // Add first 10 vehicles
-                addVehiclesToQueue(10);
+            // Add first 10 vehicles
+            addVehiclesToQueue(10);
 
-                // Start pulsing to tracking server every 30seconds
-                ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-                Runnable pulse = () -> {
-                    pulseNextTick = true;
-                };
-                executor.scheduleAtFixedRate(pulse, 5, 10, TimeUnit.SECONDS);
-            } catch (IOException e) {
-                System.out.println(e);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            initiated = true;
+            // Start pulsing to tracking server every 30seconds
+            ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+            Runnable pulse = () -> {
+                pulseNextTick = true;
+            };
+            executor.scheduleAtFixedRate(pulse, 5, 10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
     /**
      * Pulses the server with Car/Lat/Lon info
      */
-    private static void pulseServer() {
+    private void pulseServer() {
         try {
             for (Vehicle v : vehicleRepo.getAll().values()) {
                 PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
@@ -86,7 +78,7 @@ public class SimulationController {
      *
      * @param amount
      */
-    public static void addVehiclesToQueue(int amount) {
+    public void addVehiclesToQueue(int amount) {
         vehiclesToAdd = amount;
         addCarsNextTick = true;
     }
@@ -94,7 +86,7 @@ public class SimulationController {
     /**
      * Generates random vehicles and adds them to the simulation.
      */
-    public static void addVehiclesToSimulation() {
+    public void addVehiclesToSimulation() {
         try {
             VehicleType type = vehicleTypeRepo.getByID("car");
 
@@ -127,16 +119,15 @@ public class SimulationController {
     /**
      * Stars the simTimeTickThread.
      */
-    private static void startSimLoop() {
-        simTimeTickThread = new Thread(() -> simTimeTickLoop());
-        simTimeTickThread.start();
+    private void startSimLoop() {
+        new Thread(() -> simTimeTickLoop()).start();
     }
 
     /**
      * Controls the Time Ticks from the simulation.
      * Any requests or queries to the simulations should be done AFTER the nextSimStep.
      */
-    private static void simTimeTickLoop() {
+    private void simTimeTickLoop() {
         while (true) {
             try {
                 connection.nextSimStep();

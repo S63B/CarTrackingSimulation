@@ -1,5 +1,6 @@
 import simulation.SimulationController;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -7,11 +8,18 @@ import java.util.*;
  */
 public class Main {
 
+    private static SimulationController simulationController;
+
     public static void main(String[] args) {
+        try {
+            simulationController = new SimulationController();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
 
-        SimulationController.init();
-
-        keepConsoleAlive();
+        if (simulationController != null){
+            keepConsoleAlive();
+        }
     }
 
     /**
@@ -19,12 +27,14 @@ public class Main {
      */
     private static void keepConsoleAlive() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("How many cars do you want to spawn?");
 
-        int createCars = scanner.nextInt();
-        SimulationController.addVehiclesToQueue(createCars);
+        while (true){
+            System.out.println("How many cars do you want to spawn?");
+            scanner.nextInt();
 
-        keepConsoleAlive();
+            int createCars = scanner.nextInt();
+            simulationController.addVehiclesToQueue(createCars);
+        }
     }
 
 }
