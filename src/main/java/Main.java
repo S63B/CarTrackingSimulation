@@ -30,7 +30,6 @@ public class Main {
 
         while (true){
             System.out.println("How many cars do you want to spawn?");
-            scanner.nextInt();
 
             int createCars = scanner.nextInt();
             simulationController.addVehiclesToQueue(createCars);

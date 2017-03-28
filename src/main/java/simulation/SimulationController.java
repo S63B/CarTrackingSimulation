@@ -5,6 +5,7 @@ import it.polito.appeal.traci.*;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,6 +23,7 @@ public class SimulationController {
     private boolean pulseNextTick = false;
     private boolean addCarsNextTick = false;
     private int vehiclesToAdd;
+    private LoadBalancer loadBalancer;
 
     //Repos
     private Repository<Route> routeRepo;
@@ -44,14 +46,17 @@ public class SimulationController {
             System.out.println("Simulation running");
 
             // Add first 10 vehicles
-            addVehiclesToQueue(10);
+            addVehiclesToQueue(100);
+
+            // Create load balancer
+            loadBalancer = new LoadBalancer();
 
             // Start pulsing to tracking server every 30seconds
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
             Runnable pulse = () -> {
                 pulseNextTick = true;
             };
-            executor.scheduleAtFixedRate(pulse, 5, 10, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(pulse, 5, 30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -62,15 +67,19 @@ public class SimulationController {
      */
     private void pulseServer() {
         try {
-            for (Vehicle v : vehicleRepo.getAll().values()) {
+
+            ArrayList<SimVehicle> simVehicles = new ArrayList<>();
+
+            for (Vehicle v :  vehicleRepo.getAll().values()) {
                 PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
                 positionConversionQuery.setPositionToConvert(v.getPosition(), true);
-                Point2D a = positionConversionQuery.get();
-                System.out.println(v.getID() + "Lat/Lon: " + a.getY() + " " + a.getX());
+
+                Point2D locationPoint = positionConversionQuery.get();
+                simVehicles.add(new SimVehicle(v, locationPoint));
             }
-            System.out.println("Amount of cars pulsed:" + vehicleRepo.getAll().values().size());
+            loadBalancer.addLoad(simVehicles);
         } catch (IOException e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
