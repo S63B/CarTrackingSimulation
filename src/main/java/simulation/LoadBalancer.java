@@ -2,7 +2,11 @@ package simulation;
 
 import com.google.common.collect.Lists;
 import it.polito.appeal.traci.SumoTraciConnection;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.HttpClientBuilder;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -43,9 +47,15 @@ public class LoadBalancer {
 
     private void pulseNextGroup() {
         for (SimVehicle v : vehicleLists.get(pulseGroup)) {
-            System.out.println(v.getVehicle().getID() + "Lat/Lon: " + v.getLocation().getY() + " " + v.getLocation().getX());
+            String httpPost = "http://192.168.24.120:8080/pol?license_plate="+v.vehicle.getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX();
+            try {
+                HttpUriRequest request = new HttpPost(httpPost);
+                HttpClientBuilder.create().build().execute(request);
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
-        System.out.println(pulseGroup + " " + vehicleLists.get(pulseGroup).size());
+        System.out.println("Group pulsed:" +pulseGroup + " Amount of cars:" + vehicleLists.get(pulseGroup).size());
         vehicleLists.get(pulseGroup).clear();
 
         if (pulseGroup < 14) {

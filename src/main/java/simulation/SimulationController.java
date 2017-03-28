@@ -3,8 +3,7 @@ package simulation;
 import it.polito.appeal.traci.*;
 
 import java.awt.geom.Point2D;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -29,9 +28,13 @@ public class SimulationController {
     private Repository<Route> routeRepo;
     private Repository<VehicleType> vehicleTypeRepo;
     private Repository<Vehicle> vehicleRepo;
+    private ArrayList<String> kentekens;
 
     public SimulationController() throws IOException {
         try {
+            // Load kentekens
+            LoadKentekens();
+
             // Connection settings
             connection = new SumoTraciConnection(config_file, 0);
             connection.addOption("start", "1");
@@ -46,7 +49,7 @@ public class SimulationController {
             System.out.println("Simulation running");
 
             // Add first 10 vehicles
-            addVehiclesToQueue(100);
+            addVehiclesToQueue(10);
 
             // Create load balancer
             loadBalancer = new LoadBalancer();
@@ -62,12 +65,45 @@ public class SimulationController {
         }
     }
 
+    private void LoadKentekens() throws IOException {
+        //Get file from resources folder
+        kentekens = new ArrayList<>();
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("PersonenautoKentekens.csv").getFile());
+
+        String csvFile = file.getAbsolutePath();
+        BufferedReader br = null;
+        String line = "";
+        String cvsSplitBy = ",";
+
+        try {
+            br = new BufferedReader(new FileReader(csvFile));
+            while ((line = br.readLine()) != null) {
+                // use comma as separator
+                String[] country = line.split(cvsSplitBy);
+                kentekens.add(country[0]);
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     /**
      * Pulses the server with Car/Lat/Lon info
      */
     private void pulseServer() {
         try {
-
             ArrayList<SimVehicle> simVehicles = new ArrayList<>();
 
             for (Vehicle v :  vehicleRepo.getAll().values()) {
@@ -108,7 +144,7 @@ public class SimulationController {
                 Route route = routeRepo.getByID(String.valueOf(routeId));
 
                 AddVehicleQuery query = connection.queryAddVehicle();
-                query.setVehicleData("car" + carCount, type, route, null, connection.getCurrentSimTime() + 1, 0, 0);
+                query.setVehicleData(kentekens.get(carCount), type, route, null, connection.getCurrentSimTime() + 1, 0, 0);
                 query.run();
 
                 carCount++;
