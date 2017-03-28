@@ -32,6 +32,7 @@ public class SimulationController {
         try {
             // Connection settings
             connection = new SumoTraciConnection(config_file, 0);
+            connection.addOption("start", "1");
             connection.runServer(true);
 
             // Gets repositories from the connection
