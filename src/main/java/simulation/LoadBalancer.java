@@ -1,7 +1,6 @@
 package simulation;
 
 import com.google.common.collect.Lists;
-import it.polito.appeal.traci.SumoTraciConnection;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -31,7 +30,7 @@ public class LoadBalancer {
         executor.scheduleAtFixedRate(pulse, 5, 2, TimeUnit.SECONDS);
     }
 
-    public void addLoad(ArrayList<SimVehicle> vehicles) {
+    public void addLoad(List<SimVehicle> vehicles) {
         int groupPartition = 0;
         int vehiclesPerGroup = (int) Math.ceil((double)vehicles.size() / 15);
 
@@ -47,7 +46,7 @@ public class LoadBalancer {
 
     private void pulseNextGroup() {
         for (SimVehicle v : vehicleLists.get(pulseGroup)) {
-            String httpPost = "http://192.168.24.120:8080/pol?license_plate="+v.vehicle.getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX();
+            String httpPost = "http://192.168.24.120:8080/pol?license_plate="+v.getVehicle().getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX();
             try {
                 HttpUriRequest request = new HttpPost(httpPost);
                 HttpClientBuilder.create().build().execute(request);

@@ -5,7 +5,9 @@ import it.polito.appeal.traci.*;
 import java.awt.geom.Point2D;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -13,16 +15,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Kevin on 27-3-2017.
  */
-
 public class SimulationController {
     private SumoTraciConnection connection;
-    private File file = new File("sumofiles/config.sumo.cfg");
-    private final String config_file = file.getAbsolutePath();
     private int carCount = 1;
-    private boolean pulseNextTick = false;
-    private boolean addCarsNextTick = false;
-    private int vehiclesToAdd;
     private LoadBalancer loadBalancer;
+
+    private List<Job> jobs;
+    private List<Job> resultJobs;
 
     //Repos
     private Repository<Route> routeRepo;
@@ -35,8 +34,13 @@ public class SimulationController {
             // Load kentekens
             LoadKentekens();
 
+            // Jobs
+            jobs = new ArrayList<>();
+            resultJobs = new ArrayList<>();
+
             // Connection settings
-            connection = new SumoTraciConnection(config_file, 0);
+            File file = new File("sumofiles/config.sumo.cfg");
+            connection = new SumoTraciConnection(file.getAbsolutePath(), 0);
             connection.addOption("start", "1");
             connection.runServer(true);
 
@@ -46,7 +50,7 @@ public class SimulationController {
 
             // Start simulation
             startSimLoop();
-            System.out.println("Simulation running");
+            System.out.println("simulation.Controllers.Simulation running");
 
             // Add first 10 vehicles
             addVehiclesToQueue(10);
@@ -57,7 +61,12 @@ public class SimulationController {
             // Start pulsing to tracking server every 30seconds
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
             Runnable pulse = () -> {
-                pulseNextTick = true;
+                jobs.add(new Job(new Runnable() {
+                    @Override
+                    public void run() {
+                        pulseServer();
+                    }
+                }));
             };
             executor.scheduleAtFixedRate(pulse, 5, 30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
@@ -72,29 +81,14 @@ public class SimulationController {
         File file = new File(classLoader.getResource("PersonenautoKentekens.csv").getFile());
 
         String csvFile = file.getAbsolutePath();
-        BufferedReader br = null;
         String line = "";
         String cvsSplitBy = ",";
 
-        try {
-            br = new BufferedReader(new FileReader(csvFile));
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             while ((line = br.readLine()) != null) {
                 // use comma as separator
                 String[] country = line.split(cvsSplitBy);
                 kentekens.add(country[0]);
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -103,19 +97,43 @@ public class SimulationController {
      * Pulses the server with Car/Lat/Lon info
      */
     private void pulseServer() {
+        loadBalancer.addLoad(getVehicles());
+    }
+
+    public List<SimVehicle> getVehiclesSafe() throws InterruptedException {
+        Job<List<SimVehicle>> job = new Job<>();
+        job.setRunnable(new Runnable() {
+            @Override
+            public void run() {
+                job.setResult(getVehicles());
+            }
+        });
+
+        resultJobs.add(job);
+
+        while (job.getResult() == null){
+            Thread.sleep(100);
+        }
+
+        return job.getResult();
+    }
+
+    private List<SimVehicle> getVehicles(){
         try {
             ArrayList<SimVehicle> simVehicles = new ArrayList<>();
 
-            for (Vehicle v :  vehicleRepo.getAll().values()) {
+            for (Vehicle v : vehicleRepo.getAll().values()) {
                 PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
                 positionConversionQuery.setPositionToConvert(v.getPosition(), true);
 
                 Point2D locationPoint = positionConversionQuery.get();
                 simVehicles.add(new SimVehicle(v, locationPoint));
             }
-            loadBalancer.addLoad(simVehicles);
+
+            return simVehicles;
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
@@ -125,41 +143,72 @@ public class SimulationController {
      * @param amount
      */
     public void addVehiclesToQueue(int amount) {
-        vehiclesToAdd = amount;
-        addCarsNextTick = true;
+        jobs.add(new Job(new Runnable() {
+            @Override
+            public void run() {
+                addVehiclesToSimulation(amount);
+            }
+        }));
+    }
+
+    public void addVehicleToQueue(String licensePlate){
+        jobs.add(new Job(new Runnable() {
+            @Override
+            public void run() {
+                addVehicleToSimulation(licensePlate);
+            }
+        }));
     }
 
     /**
      * Generates random vehicles and adds them to the simulation.
      */
-    public void addVehiclesToSimulation() {
+    public void addVehiclesToSimulation(int amount) {
         try {
-            VehicleType type = vehicleTypeRepo.getByID("car");
-
-            Random randomRoute = new Random();
-            String routeId;
-
-            for (int i = 0; i < vehiclesToAdd; i++) {
-                routeId = String.valueOf(randomRoute.nextInt(5840));
-                Route route = routeRepo.getByID(String.valueOf(routeId));
-
-                AddVehicleQuery query = connection.queryAddVehicle();
-                query.setVehicleData(kentekens.get(carCount), type, route, null, connection.getCurrentSimTime() + 1, 0, 0);
-                query.run();
-
+            for (int i = 0; i < amount; i++) {
+                addVehicleToSimulation(kentekens.get(carCount));
                 carCount++;
             }
+
             connection.nextSimStep();
             vehicleRepo = connection.getVehicleRepository();
 
             //Starting the stimulation again.
-            System.out.println("Total amount of cars spawned:" + vehiclesToAdd);
-
+            System.out.println("Total amount of cars spawned:" + amount);
 
             // connection.getSimulationData().queryPositionConversion().setPositionToConvert(meh.getPosition(),true);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void addVehicleToSimulation(String licensePlate){
+        try{
+            VehicleType type = vehicleTypeRepo.getByID("car");
+
+            Random randomRoute = new Random();
+            String routeId = String.valueOf(randomRoute.nextInt(5840));
+            Route route = routeRepo.getByID(String.valueOf(routeId));
+
+            AddVehicleQuery query = connection.queryAddVehicle();
+            query.setVehicleData(licensePlate, type, route, null, connection.getCurrentSimTime() + 1, 0, 0);
+            query.run();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void stop(){
+        jobs.add(new Job(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connection.close();
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }));
     }
 
     /**
@@ -177,13 +226,15 @@ public class SimulationController {
         while (true) {
             try {
                 connection.nextSimStep();
-                if (pulseNextTick) {
-                    pulseNextTick = false;
-                    pulseServer();
+
+                while (resultJobs.size() > 0){
+                    resultJobs.get(0).execute();
+                    resultJobs.remove(0);
                 }
-                if (addCarsNextTick) {
-                    addCarsNextTick = false;
-                    addVehiclesToSimulation();
+
+                while (jobs.size() > 0){
+                    jobs.get(0).execute();
+                    jobs.remove(0);
                 }
             } catch (Exception exception) {
                 System.out.println("Error:" + exception.toString());
