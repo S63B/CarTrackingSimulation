@@ -16,10 +16,14 @@ public class SimVehicle {
 
     private String licensePlate;
 
+    @JsonIgnore
+    private long timestamp;
+
     public SimVehicle(Vehicle vehicle, Point2D location) {
         this.vehicle = vehicle;
         this.location = location;
         this.licensePlate = vehicle.getID();
+        this.timestamp = System.currentTimeMillis();
     }
 
     public Vehicle getVehicle() {
@@ -32,5 +36,9 @@ public class SimVehicle {
 
     public String getLicensePlate() {
         return licensePlate;
+    }
+
+    public long getTimestamp(){
+        return timestamp;
     }
 }
