@@ -120,7 +120,7 @@ public class SimulationController {
 
     private List<SimVehicle> getVehicles(){
         try {
-            ArrayList<SimVehicle> simVehicles = new ArrayList<>();
+                ArrayList<SimVehicle> simVehicles = new ArrayList<>();
 
             for (Vehicle v : vehicleRepo.getAll().values()) {
                 PositionConversionQuery positionConversionQuery = connection.getSimulationData().queryPositionConversion();
@@ -155,6 +155,15 @@ public class SimulationController {
         jobs.add(new Job(new Runnable() {
             @Override
             public void run() {
+                List<SimVehicle> vehicles = getVehicles();
+                if (vehicles != null){
+                    for (SimVehicle v : vehicles){
+                        if (v.getLicensePlate().equals(licensePlate)){
+                            return;
+                        }
+                    }
+                }
+
                 addVehicleToSimulation(licensePlate);
             }
         }));
