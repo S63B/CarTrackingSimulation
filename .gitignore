@@ -24,3 +24,7 @@ nbdist/
 .nb-gradle/
 
 sumofiles/eindhoven.net.xml
+
+
+src/app/*.js
+src/app/*.map
