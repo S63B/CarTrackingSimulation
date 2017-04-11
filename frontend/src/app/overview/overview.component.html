@@ -1,10 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Overview</title>
+  <meta charset="UTF-8">
+  <title>Overview</title>
 </head>
 <body>
-  wrlkorwrwngorenrgp
+  <p-messages [value]="msgs"></p-messages>
+  <p-panel header="Add cars" [toggleable]="true">
+    <p>Value: {{slider}}</p>
+    <p-slider [(ngModel)]="slider" [step]="10" [min]="10" [max]="100"></p-slider>
+    <br>
+    <button type="button" pButton label="Add cars" (click)="addCars()"></button>
+  </p-panel>
+
+  <br>
+
+  <p-panel header="Add car by license plate" [toggleable]="true">
+
+    <input type="text" pInputText [(ngModel)]="licensePlate"/>
+    <br><br>
+    <button type="button" pButton label="Add car" (click)="addCar()"></button>
+  </p-panel>
+
+  <br>
+
+  <p-panel header="Overview" [toggleable]="true">
+    <p-dataTable [value]="cars">
+      <p-column field="licensePlate" header="License plate"></p-column>
+    </p-dataTable>
+  </p-panel>
+
+  <br>
+
+  <p-confirmDialog header="Confirmation"  width="425"></p-confirmDialog>
+
+  <button type="text" (click)="restart()" pButton  label="Restart"></button>
+
 </body>
 </html>
