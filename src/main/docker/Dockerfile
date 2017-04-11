@@ -1,5 +1,6 @@
 FROM frolvlad/alpine-oraclejdk8:slim
 VOLUME /tmp
+ADD simulation-0.0.1-SNAPSHOT.jar simulation.jar
 ADD cartrackingsimulation.jar simulation.jar
 RUN apt-get install sumo sumo-tools sumo-doc
 RUN sh -c 'touch /simulation.jar'
