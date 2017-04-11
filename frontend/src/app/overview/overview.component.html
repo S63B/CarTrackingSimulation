@@ -25,8 +25,8 @@
   <br>
 
   <p-panel header="Overview" [toggleable]="true">
-    <p-dataTable [value]="cars">
-      <p-column field="licensePlate" header="License plate"></p-column>
+    <p-dataTable [value]="cars" [rows]="10" [paginator]="true" [pageLinks]="3" [rowsPerPageOptions]="[5,10,20]">
+      <p-column field="licensePlate" [filter]="true" filterPlaceholder="Search"  header="License plate"></p-column>
     </p-dataTable>
   </p-panel>
 
