@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.S63B</groupId>
-	<artifactId>cartrackingsimulation</artifactId>
+	<artifactId>simulation</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<build>
 		<plugins>
