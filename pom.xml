@@ -6,6 +6,8 @@
 	<groupId>com.S63B</groupId>
 	<artifactId>simulation</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -35,9 +37,8 @@
 			</plugin>
 		</plugins>
 	</build>
-	<packaging>jar</packaging>
 
-	<name>cartrackingsimulation</name>
+	<name>simulation</name>
 	<description>Car tracking simulation</description>
 
 
