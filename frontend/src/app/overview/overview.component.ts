@@ -13,11 +13,10 @@ import {ConfirmationService, Message} from "primeng/primeng";
   encapsulation: ViewEncapsulation.None
 })
 export class OverviewComponent implements OnInit {
-  name = 'Angular';
-  slider: number = 10;
-  licensePlate: string;
-  cars: Car[] = [];
-  msgs: Message[] = [];
+   slider: number = 10;
+   licensePlate: string = "";
+   cars: Car[] = [];
+   msgs: Message[] = [];
 
 
   constructor(private service: OverviewService, private confirmationService: ConfirmationService) {
@@ -30,8 +29,6 @@ export class OverviewComponent implements OnInit {
   getCars() {
     this.service.getCars().subscribe(
       res => {
-        debugger;
-        // alert(res);
         this.showInfo(" Retrieved: " + res.length + " cars");
         this.cars = res;
       },
@@ -44,7 +41,6 @@ export class OverviewComponent implements OnInit {
   addCars() {
     this.service.addCars(this.slider).subscribe(
       res => {
-        //alert(res);
         this.showInfo("Added: " + this.slider + " cars");
       },
       err => {
@@ -54,10 +50,14 @@ export class OverviewComponent implements OnInit {
   }
 
   addCar() {
+    if(!this.licensePlate.length){
+      this.showError("Please enter a license plate.");
+      return;
+    }
+
     this.service.addCar(this.licensePlate).subscribe(
       res => {
-        debugger;
-        this.showInfo(" Added: " + res.licensePlate);
+        this.showInfo(" Added: " + this.licensePlate);
       },
       err => {
         console.log(err);
