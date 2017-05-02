@@ -11,6 +11,10 @@ export class OverviewService {
   constructor(private http: Http) {
   }
 
+  /**
+   * Retrieves all the cars that are running in the simulation application
+   * @returns {Observable<R|I>|Observable<R>}   All the cars that are running in the simulation application.
+   */
   getCars(): Observable<Car[]> {
     return Observable.interval(10000)
       .switchMap(() => this.http.get(this.baseUrl + "/vehicles")
@@ -18,6 +22,12 @@ export class OverviewService {
         .catch((error: any) => Observable.throw(error.json().error || 'Server error')));
   }
 
+
+  /**
+   * Adds a car to the simulation application with a specific license plate.
+   * @param licensePlate        The license plate of the car you want to add.
+   * @returns {Observable<R>}   The car you want to add.
+   */
   addCar(licensePlate: string): Observable<Car> {
     let headers = new Headers({'Content-Type': 'application/json'});
     let options = new RequestOptions({headers: headers});
@@ -26,6 +36,11 @@ export class OverviewService {
       .catch(this.handleError);
   }
 
+  /**
+   * Adds random cars to the simulation application.
+   * @param numberOfCars        The number of cars you want to add.
+   * @returns {Observable<R>}   The cars you want to add.
+   */
   addCars(numberOfCars: number): Observable<Car[]> {
     let headers = new Headers({'Content-Type': 'application/json'});
     let options = new RequestOptions({headers: headers});
@@ -34,6 +49,10 @@ export class OverviewService {
       .catch(this.handleError);
   }
 
+  /**
+   * Restarts the simulation application on the VM.
+   * @returns {Observable<R>}
+   */
   restart (): Observable<string> {
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
@@ -42,11 +61,21 @@ export class OverviewService {
       .catch(this.handleError);
   }
 
+  /**
+   * Extracts the object from the response
+   * @param res         The response from the backend
+   * @returns {any|{}}  The extracted object from the response.
+   */
   private extractData(res: Response) {
     let body = res.text();
     return JSON.parse(body).entity || {};
   }
 
+  /**
+   * Handles error for the API methods
+   * @param error     The error returned from the backend
+   * @returns {any}   A observable with the error message
+   */
   private handleError (error: Response | any) {
     // In a real world app, you might use a remote logging infrastructure
     let errMsg: string;
