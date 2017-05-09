@@ -25,9 +25,13 @@ public class LoadBalancer {
         generateArrayLists();
         pulseGroup = 0;
 
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        Runnable pulse = () -> pulseNextGroup();
-        executor.scheduleAtFixedRate(pulse, 5, 2, TimeUnit.SECONDS);
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                pulseNextGroup();
+            }
+        }, 5, 2, TimeUnit.SECONDS);
     }
 
     public void addLoad(List<SimVehicle> vehicles) {
@@ -45,14 +49,21 @@ public class LoadBalancer {
     }
 
     private void pulseNextGroup() {
-        for (SimVehicle v : vehicleLists.get(pulseGroup)) {
-            String httpPost = "http://192.168.24.125:8080/pol?license_plate="+v.getVehicle().getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX()+"&timestamp="+v.getTimestamp();
-            try {
-                HttpUriRequest request = new HttpPost(httpPost);
-                HttpClientBuilder.create().build().execute(request);
-            } catch (IOException e) {
-                System.out.println(e);
+        try{
+            ArrayList<SimVehicle> vehicles = new ArrayList<>();
+            vehicles.addAll(vehicleLists.get(pulseGroup));
+            for (SimVehicle v : vehicles) {
+                String httpPost = "http://192.168.24.125:8080/pol?license_plate="+v.getVehicle().getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX()+"&timestamp="+v.getTimestamp();
+                try {
+                    HttpUriRequest request = new HttpPost(httpPost);
+                    HttpClientBuilder.create().build().execute(request);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println(e);
+                }
             }
+        }catch (Throwable t){
+            t.printStackTrace();
         }
         System.out.println("Group pulsed:" +pulseGroup + " Amount of cars:" + vehicleLists.get(pulseGroup).size());
         vehicleLists.get(pulseGroup).clear();
