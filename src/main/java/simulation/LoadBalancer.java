@@ -53,7 +53,7 @@ public class LoadBalancer {
             ArrayList<SimVehicle> vehicles = new ArrayList<>();
             vehicles.addAll(vehicleLists.get(pulseGroup));
             for (SimVehicle v : vehicles) {
-                String httpPost = "http://192.168.24.125:8080/pol?license_plate="+v.getVehicle().getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX()+"&timestamp="+v.getTimestamp();
+                String httpPost = "http://192.168.24.120:8080/pol?license_plate="+v.getVehicle().getID()+"&lat="+v.getLocation().getY()+"&lng="+v.getLocation().getX()+"&timestamp="+v.getTimestamp();
                 try {
                     HttpUriRequest request = new HttpPost(httpPost);
                     HttpClientBuilder.create().build().execute(request);

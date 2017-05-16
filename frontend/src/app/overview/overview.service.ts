@@ -6,7 +6,7 @@ import {Car} from "./Car";
 
 @Injectable()
 export class OverviewService {
-  private baseUrl = 'http://192.168.24.125:8080';
+  private baseUrl = 'http://192.168.24.120:8080';
 
   constructor(private http: Http) {
   }
